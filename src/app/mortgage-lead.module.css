@@ -6,20 +6,47 @@
 */
 
 .root {
+    /* ================================
+       CLIENT THEME — CHANGE THIS ONLY
+       ================================ */
+
+    /* Main text colours */
     --ml-ink: #0f172a;
     --ml-ink-soft: #334155;
     --ml-muted: #64748b;
     --ml-faint: #94a3b8;
+
+    /* Borders */
     --ml-line: rgba(15, 23, 42, 0.08);
     --ml-line-strong: rgba(15, 23, 42, 0.12);
+
+    /* Backgrounds */
     --ml-surface: #ffffff;
     --ml-surface-subtle: #f8fafc;
+
+    /* Main brand colour */
     --ml-accent: #0f172a;
+    --ml-accent-contrast: #ffffff;
+
+    /* States */
+    --ml-error: #b91c1c;
+    --ml-focus-border: rgba(15, 23, 42, 0.28);
+    --ml-focus-ring: rgba(15, 23, 42, 0.05);
+
+    /* Shape */
     --ml-radius-sm: 10px;
     --ml-radius-md: 14px;
     --ml-radius-lg: 18px;
+
+    /* Shadow */
     --ml-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 40px rgba(15, 23, 42, 0.06);
+
+    /* Font */
     --ml-font: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+    /* ================================
+       DO NOT USUALLY CHANGE BELOW HERE
+       ================================ */
 
     width: 100%;
     min-width: 0;
@@ -414,8 +441,8 @@
 
 .input:focus,
 .select:focus {
-    border-color: rgba(15, 23, 42, 0.28);
-    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.05);
+    border-color: var(--ml-focus-border);
+    box-shadow: 0 0 0 3px var(--ml-focus-ring);
 }
 
 .help {
@@ -428,7 +455,7 @@
 .fieldError {
     margin-top: 0.4rem;
     font-size: 0.75rem;
-    color: #b91c1c;
+    color: var(--ml-error);
     font-weight: 500;
 }
 
@@ -443,7 +470,7 @@
     font-weight: 600;
     cursor: pointer;
     background: var(--ml-accent);
-    color: #fff;
+    color: var(--ml-accent-contrast);
     margin-top: 0.65rem;
     letter-spacing: 0.01em;
     transition:
@@ -510,7 +537,7 @@
 .choiceToggleActive {
     border-color: var(--ml-accent);
     background: var(--ml-accent);
-    color: #fff;
+    color: var(--ml-accent-contrast);
 }
 
 /* Step 3 â€” headline monthly overpayment (refinance; tied to savings estimate) */
@@ -680,7 +707,7 @@
 .alertError {
     margin-top: 0.75rem;
     font-size: 0.75rem;
-    color: #b91c1c;
+    color: var(--ml-error);
     font-weight: 500;
 }
 

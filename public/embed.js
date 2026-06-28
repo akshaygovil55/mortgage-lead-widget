@@ -1,90 +1,75 @@
-(function () {
-    var script = document.currentScript;
+class MortgageLeadWidget extends HTMLElement {
+    connectedCallback() {
+        if (this._mounted) return;
+        this._mounted = true;
 
-    if (!script) {
-        var scripts = document.getElementsByTagName("script");
-        script = scripts[scripts.length - 1];
-    }
+        const src =
+            this.getAttribute("src") ||
+            "https://mortgage-lead-widget.vercel.app/";
 
-    if (!script) return;
+        const minHeight = Number(this.getAttribute("min-height") || 420);
+        const maxHeight = Number(this.getAttribute("max-height") || 5000);
+        const widgetOrigin = new URL(src).origin;
+        const namespace = "mortgage-lead-magnet";
 
-    var client = script.getAttribute("data-client") || "demo";
-    var widgetUrl =
-        script.getAttribute("data-src") ||
-        "https://mortgage-lead-widget.vercel.app/";
+        this.style.display = "block";
+        this.style.width = "100%";
+        this.style.minHeight = `${minHeight}px`;
+        this.style.overflow = "hidden";
 
-    var minHeight = parseInt(script.getAttribute("data-min-height") || "700", 10);
-    var maxHeight = parseInt(script.getAttribute("data-max-height") || "5000", 10);
+        const iframe = document.createElement("iframe");
+        iframe.src = src;
+        iframe.title = "Mortgage Estimate";
+        iframe.loading = "lazy";
+        iframe.scrolling = "no";
 
-    if (!Number.isFinite(minHeight) || minHeight < 300) minHeight = 700;
-    if (!Number.isFinite(maxHeight) || maxHeight < minHeight) maxHeight = 5000;
+        iframe.style.width = "100%";
+        iframe.style.height = `${minHeight}px`;
+        iframe.style.minHeight = `${minHeight}px`;
+        iframe.style.border = "0";
+        iframe.style.display = "block";
+        iframe.style.overflow = "hidden";
+        iframe.style.background = "transparent";
 
-    var iframeUrl = new URL(widgetUrl);
-    iframeUrl.searchParams.set("client", client);
-    iframeUrl.searchParams.set("embed", "1");
+        this.appendChild(iframe);
 
-    var allowedOrigin = iframeUrl.origin;
+        this._onMessage = (event) => {
+            if (event.origin !== widgetOrigin) return;
+            if (event.source !== iframe.contentWindow) return;
 
-    var wrapper = document.createElement("div");
-    wrapper.setAttribute("data-mortgage-lead-wrapper", client);
-    wrapper.style.width = "100%";
-    wrapper.style.maxWidth = "100%";
-    wrapper.style.overflow = "hidden";
-    wrapper.style.margin = "0";
-    wrapper.style.padding = "0";
+            const data = event.data || {};
+            if (data.namespace !== namespace) return;
 
-    var iframe = document.createElement("iframe");
-    iframe.src = iframeUrl.toString();
-    iframe.title = script.getAttribute("data-title") || "Mortgage estimate form";
-    iframe.loading = "lazy";
-    iframe.scrolling = "no";
-    iframe.referrerPolicy = "strict-origin-when-cross-origin";
+            if (data.type === "resize") {
+                const nextHeight = Number(data.height);
+                if (!Number.isFinite(nextHeight)) return;
 
-    iframe.style.width = "100%";
-    iframe.style.height = minHeight + "px";
-    iframe.style.minHeight = minHeight + "px";
-    iframe.style.border = "0";
-    iframe.style.display = "block";
-    iframe.style.overflow = "hidden";
-    iframe.style.background = "transparent";
+                const safeHeight = Math.max(
+                    minHeight,
+                    Math.min(nextHeight, maxHeight)
+                );
 
-    wrapper.appendChild(iframe);
+                iframe.style.height = `${safeHeight}px`;
+                this.style.height = `${safeHeight}px`;
+                this.style.minHeight = `${safeHeight}px`;
+            }
 
-    if (script.parentNode) {
-        script.parentNode.insertBefore(wrapper, script.nextSibling);
-    }
-
-    var lastHeight = minHeight;
-
-    window.addEventListener("message", function (event) {
-        if (event.origin !== allowedOrigin) return;
-
-        var data = event.data || {};
-
-        if (data.namespace !== "mortgage-lead-magnet") return;
-
-        if (data.type === "resize") {
-            var nextHeight = Number(data.height);
-
-            if (!Number.isFinite(nextHeight)) return;
-
-            nextHeight = Math.max(minHeight, Math.min(nextHeight, maxHeight));
-
-            if (Math.abs(nextHeight - lastHeight) < 8) return;
-
-            lastHeight = nextHeight;
-            iframe.style.height = nextHeight + "px";
-        }
-
-        if (data.type === "scroll-to-top") {
-            try {
-                iframe.scrollIntoView({
+            if (data.type === "scroll-to-top") {
+                this.scrollIntoView({
                     behavior: "smooth",
                     block: "start",
                 });
-            } catch {
-                iframe.scrollIntoView();
             }
+        };
+
+        window.addEventListener("message", this._onMessage);
+    }
+
+    disconnectedCallback() {
+        if (this._onMessage) {
+            window.removeEventListener("message", this._onMessage);
         }
-    });
-})();
+    }
+}
+
+customElements.define("mortgage-lead-widget", MortgageLeadWidget);

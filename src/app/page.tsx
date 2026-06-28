@@ -992,6 +992,14 @@ function TurnstileWidget({
 }
 
 
+function getParentOrigin(): string {
+    try {
+        return document.referrer ? new URL(document.referrer).origin : "*";
+    } catch {
+        return "*";
+    }
+}
+
 function postEmbedMessage(payload: Record<string, unknown>) {
     if (typeof window === "undefined") return;
     if (window.parent === window) return;
@@ -1001,7 +1009,7 @@ function postEmbedMessage(payload: Record<string, unknown>) {
             namespace: EMBED_MESSAGE_NAMESPACE,
             ...payload,
         },
-        "*"
+        getParentOrigin()
     );
 }
 
@@ -1011,7 +1019,7 @@ function requestParentScrollToTop() {
     });
 }
 
-function useIframeAutoResize() {
+function useIframeAutoResize(contentRef?: React.RefObject<HTMLElement | null>) {
     const lastHeightRef = useRef(0);
     const rafRef = useRef<number | null>(null);
 
@@ -1026,18 +1034,22 @@ function useIframeAutoResize() {
         rafRef.current = requestAnimationFrame(() => {
             rafRef.current = null;
 
-            const height = Math.ceil(
-                Math.max(
+            const node = contentRef?.current;
+
+            const measuredHeight = node
+                ? node.getBoundingClientRect().height
+                : Math.max(
                     document.body.scrollHeight,
                     document.body.offsetHeight,
-                    document.documentElement.clientHeight,
                     document.documentElement.scrollHeight,
                     document.documentElement.offsetHeight,
                     MIN_EMBED_HEIGHT
-                )
-            );
+                );
 
-            const safeHeight = Math.min(height, MAX_EMBED_HEIGHT);
+            const safeHeight = Math.min(
+                Math.ceil(Math.max(measuredHeight, MIN_EMBED_HEIGHT)),
+                MAX_EMBED_HEIGHT
+            );
 
             if (Math.abs(safeHeight - lastHeightRef.current) < 2) return;
 
@@ -1048,7 +1060,7 @@ function useIframeAutoResize() {
                 height: safeHeight,
             });
         });
-    }, []);
+    }, [contentRef]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -1059,7 +1071,10 @@ function useIframeAutoResize() {
                 ? new ResizeObserver(sendHeight)
                 : null;
 
-        resizeObserver?.observe(document.documentElement);
+        if (contentRef?.current) {
+            resizeObserver?.observe(contentRef.current);
+        }
+
         resizeObserver?.observe(document.body);
 
         const mutationObserver =
@@ -1078,20 +1093,30 @@ function useIframeAutoResize() {
 
         sendHeight();
 
+        document.fonts?.ready?.then(sendHeight).catch(() => { });
+
+        const t1 = window.setTimeout(sendHeight, 100);
+        const t2 = window.setTimeout(sendHeight, 500);
+        const t3 = window.setTimeout(sendHeight, 1200);
         const fallback = window.setInterval(sendHeight, 1000);
 
         return () => {
             resizeObserver?.disconnect();
             mutationObserver?.disconnect();
+
             window.removeEventListener("load", sendHeight);
             window.removeEventListener("resize", sendHeight);
+
+            window.clearTimeout(t1);
+            window.clearTimeout(t2);
+            window.clearTimeout(t3);
             window.clearInterval(fallback);
 
             if (rafRef.current !== null) {
                 cancelAnimationFrame(rafRef.current);
             }
         };
-    }, [sendHeight]);
+    }, [sendHeight, contentRef]);
 
     return sendHeight;
 }
@@ -1102,7 +1127,7 @@ export default function MortgageLeadMagnetPage() {
         return `${STORAGE_KEY_PREFIX}:${pathname || "default"}`;
     }, [pathname]);
 
-    const topRef = useRef<HTMLDivElement>(null);
+    const topRef = useRef<HTMLElement | null>(null);
     const headingRef = useRef<HTMLHeadingElement>(null);
 
     const [step, setStep] = useState(1);
@@ -1130,7 +1155,7 @@ export default function MortgageLeadMagnetPage() {
     >("idle");
     const transitionTimerRef = useRef<number | null>(null);
 
-    const sendEmbedHeight = useIframeAutoResize();
+    const sendEmbedHeight = useIframeAutoResize(topRef);
 
     useEffect(() => {
         sendEmbedHeight();

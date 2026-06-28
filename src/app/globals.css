@@ -18,17 +18,17 @@
     box-sizing: border-box;
 }
 
-html {
-    margin: 0;
-    padding: 0;
-    background: transparent;
-}
-
+html,
 body {
     margin: 0;
     padding: 0;
+    width: 100%;
     min-width: 0;
     background: transparent;
+    overflow: hidden;
+}
+
+body {
     color: var(--foreground);
     font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
@@ -40,10 +40,7 @@ textarea {
     font: inherit;
 }
 
-button {
-    color: inherit;
-}
-
+button,
 a {
     color: inherit;
 }
